@@ -1,7 +1,10 @@
 {
   "name": "peer-review-bot",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
+  "author": "Felix Rieseberg <felix@felixrieseberg.com>",
+  "repository": {
+      "url": "https://github.com/felixrieseberg/peer-review-bot"
+  },
   "scripts": {
     "start": "node ./bin/www"
   },

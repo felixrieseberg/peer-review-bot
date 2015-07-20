@@ -1,43 +1,54 @@
 var express = require('express'),
-    logger = require('morgan'),
-    config = require('../config'),
     bot = require('../bot'),
+    debug = require('debug')('case-study-bot:pullrequest'),
     router = express.Router();
 
-router.get('/', function (req, res, next) {
-    bot.getPullRequests(function (pullRequests) {
-        // For each PR, check for labels
-        for (var i = 0; i < pullRequests.length; i++) {
-            var pr = pullRequests[i];
+function _respond(res, message) {
+    if (res && message) {
+        res.json({message: message});
+    }
+}
 
-            bot.checkForLabel(pr.number, function (labelResult) {
-                if (labelResult.labeledReviewed) {
-                    // Already labeled as 'reviewed', we're done here
-                    return console.log('PR ' + pr.number + 'already marked as "reviewed", stopping');;
+router.get('/', function (req, res) {
+    bot.getPullRequests(function (pullRequests) {
+        var pr, i;
+
+        // Processing function for each pull request
+        function processPullRequest(labelResult) {
+            if (labelResult.labeledReviewed) {
+                // Already labeled as 'reviewed', we're done here
+                _respond(res, 'PR ' + pr.number + ' already marked as "reviewed", stopping');
+                return debug('PR ' + pr.number + ' already marked as "reviewed", stopping');
+            }
+
+            // Let's get all our comments and check them for approval
+            bot.checkForApprovalComments(pr.number, function (approved) {
+                // Check for comment and post if not present
+                bot.checkForInstructionsComment(pr.number, function (posted) {
+                    if (!posted) {
+                        bot.postInstructionsComment(pr.number);
+                    }
+                });
+
+                if (labelResult.labeledNeedsReview && !approved) {
+                    _respond(res, 'PR ' + pr.number + ' already marked as "needs-review", stopping');
+                    return debug('PR ' + pr.number + ' already marked as "needs-review", stopping');
                 }
 
-                // Let's get all our comments and check them for approval
-                bot.checkForApprovalComments(pr.number, function (approved) {
-                    if (labelResult.labeledNeedsReview && !approved) {
-                        // Already labeled as 'needs-review', we're done here
-                        return console.log('PR ' + pr.number + 'already marked as "needs-review", stopping');
-                    }
-
-                    var labels = labelResult.labels.map(function (label) {
-                        return label.name;
-                    });
-
-                    // Update the labels
-                    updateLabels(pr.number, approved, labels);
-                    
-                    // Check for comment and post if not present
-                    bot.checkForInstructionsComment(function (posted) {
-                        if (!posted) {
-                            bot.postInstructionsComment(pr.number);
-                        }
-                    })
+                var labels = labelResult.labels.map(function (label) {
+                    return label.name;
                 });
+
+                // Update the labels
+                bot.updateLabels(pr.number, approved, labels);
+                _respond(res, 'Updating labels for PR' + pr.number);
             });
+        }
+
+        // For each PR, check for labels
+        for (i = 0; i < pullRequests.length; i = i + 1) {
+            pr = pullRequests[i];
+            bot.checkForLabel(pr.number, processPullRequest);
         }
     });
 });

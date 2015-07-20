@@ -1,8 +1,32 @@
 var GitHubApi = require('github'),
-    config = require('../config'),
+    debug = require('debug')('case-study-bot:bot'),
+    config = require('./config');
 
 var github = new GitHubApi({version: '3.0.0'});
+
+/**
+ * Private: Authenticate next request
+ */
+function _authenticate() {
+    if ((!config.botUser || !config.botPassword) || (!config.oauth2key || !config.oauth2secret)) {
+        throw Error('Fatal: No username/password or no Oauth2 key/secret configured!');
+    }
     
+    if (config.oauth2key && config.oauth2secret) {
+        github.authenticate({
+            type: 'oauth',
+            key: config.oauth2key,
+            secret: config.oauth2secret
+        })
+    } else {
+        github.authenticate({
+            type: 'basic',
+            username: config.botUser,
+            password: config.botPassword
+        });
+    }
+}
+
 /**
  * Fetch all (open) pull requests in the currently configured repo
  * @callback {getPullRequestsCb} callback
@@ -18,14 +42,16 @@ function getPullRequests(callback) {
         state: 'all'
     }, function(error, result) {
         if (error) {
-            return console.log('getPullRequests: Error while fetching PRs: ', error);
+            return debug('getPullRequests: Error while fetching PRs: ', error);
         }
 
         if (!result || !result.length || result.length < 1) {
-            return console.log('getPullRequests: No open PRs found');
+            return debug('getPullRequests: No open PRs found');
         }
-
-        callback(result);
+        
+        if (callback) {
+            callback(result);
+        }
     });
 }
 
@@ -40,7 +66,7 @@ function checkForLabel(prNumber, callback) {
      * @param {Object} result - Object describing how the issue is labeled
      */
     if (!prNumber) {
-        return console.log('checkForLabel: insufficient parameters');
+        return debug('checkForLabel: insufficient parameters');
     }
 
     github.issues.getIssueLabels({
@@ -53,7 +79,7 @@ function checkForLabel(prNumber, callback) {
             labels = [];
 
         if (error) {
-            return console.log('checkForLabel: Error while fetching labels for single PR: ', error);
+            return debug('checkForLabel: Error while fetching labels for single PR: ', error);
         }
 
         // Check if already labeled
@@ -62,12 +88,14 @@ function checkForLabel(prNumber, callback) {
             labeledReviewed = (result[i].name === config.labelReviewed) ? true : labeledReviewed;
             labels.push(result[i]);
         }
-
-        callback({
-            labeledNeedsReview: labeledNeedsReview,
-            labeledReviewed: labeledReviewed,
-            labels: labels
-        })
+        
+        if (callback) {
+            callback({
+                labeledNeedsReview: labeledNeedsReview,
+                labeledReviewed: labeledReviewed,
+                labels: labels
+            })   
+        }
     });
 }
 
@@ -82,7 +110,7 @@ function checkForApprovalComments(prNumber, callback) {
      * @param {boolean} approved - Approved or not?
      */
      if (!prNumber) {
-         return console.log('checkForApprovalComments: insufficient parameters');
+         return debug('checkForApprovalComments: insufficient parameters');
      }
 
      github.issues.getComments({
@@ -96,7 +124,7 @@ function checkForApprovalComments(prNumber, callback) {
             approved;
 
         if (error) {
-            return console.log('checkForApprovalComments: Error while fetching coments for single PR: ', error);
+            return debug('checkForApprovalComments: Error while fetching coments for single PR: ', error);
         }
 
         for (var i = 0; i < result.length; i++) {
@@ -106,7 +134,10 @@ function checkForApprovalComments(prNumber, callback) {
         }
 
         approved = (approvedCount >= config.reviewsNeeded);
-        callback(approved);
+
+        if (callback) {
+            callback(approved);
+        }
      });
 }
 
@@ -126,19 +157,21 @@ function checkForInstructionsComment(prNumber, callback) {
         number: prNumber
     }, function (error, result) {
         var instructed = false;
-        
+
         if (error) {
-            return console.log('commentInstructions: error while trying fetch comments: ', error);
+            return debug('commentInstructions: error while trying fetch comments: ', error);
         }
-        
+
         for (var i = 0; i < result.length; i++) {
-            instructed = (result[i].indexOf('I\'m your friendly/stabby Case Study Bot. For this') > 1);
+            instructed = (result[i].body.slice(1, 30).trim() === config.instructionsComment.slice(1, 30).trim());
             if (instructed) {
                 break;
             }
         }
-        
-        callback(instructed);
+
+        if (callback) {
+            callback(instructed);
+        }
     });
 }
 
@@ -147,14 +180,20 @@ function checkForInstructionsComment(prNumber, callback) {
  * @param {int} prNumber - Number of PR
  * @param {boolean} approved - 'True' for 'peer-reviewed'
  * @param {sring[]} labels - Previously fetched labels
+ * @callback {updateLabelsCb} callback
  */
-function updateLabels(prNumber, approved, labels) {
+function updateLabels(prNumber, approved, labels, callback) {
+    /**
+     * @callback updateLabelsCb
+     * @param {Object} result - Result returned from GitHub
+     */
+
     var changed = false;
 
     labels = (!labels || !labels.length) ? [] : labels;
 
     if ((approved !== true && approved !== false) || !prNumber) {
-        return console.log('labelPullRequest: insufficient parameters');
+        return debug('labelPullRequest: insufficient parameters');
     }
 
     // Adjust labels for approved / not approved
@@ -175,12 +214,7 @@ function updateLabels(prNumber, approved, labels) {
     }
 
     if (changed) {
-        github.authenticate({
-            type: 'basic',
-            username: config.botUser,
-            password: config.botPassword
-        });
-
+        _authenticate();
         github.issues.edit({
             user: config.user,
             repo: config.repo,
@@ -188,7 +222,10 @@ function updateLabels(prNumber, approved, labels) {
             labels: JSON.stringify(labels)
         }, function (error, result) {
             if (error) {
-                return console.log('labelPullRequest: error while trying to label PR: ', error);
+                return debug('labelPullRequest: error while trying to label PR: ', error);
+            }
+            if (callback) {
+                callback(result);
             }
         });
     }
@@ -196,26 +233,61 @@ function updateLabels(prNumber, approved, labels) {
 
 /**
  * Post the instructions comment to a PR
- * @param {int} prNumber - The number of the PR to post to 
+ * @param {int} prNumber - Number of the PR to post to
+ * @callback {postInstructionsCommentCb} callback
  */
-function postInstructionsComment(prNumber) {
-    var comment = 'Hi! I\'m your friendly/stabby Case Study Bot. For this case study to be labeled as "peer-reviewed",';
-    comment += 'you\'ll need as least ' + config.reviewsNeeded + 'comments containing the magic phrase "LGTM"';
-    comment += '("Looks good to me" also works, for those of us that are really verbose).';
-    
-    github.createComment({
+function postInstructionsComment(prNumber, callback) {
+    /**
+     * @callback postInstructionsCommentCb
+     * @param {Object} result - Result returned from GitHub
+     */
+    _authenticate();
+    github.issues.createComment({
         user: config.user,
         repo: config.repo,
         number: prNumber,
-        body: comment
+        body: config.instructionsComment
+    }, function (error, result) {
+        if (error) {
+            return debug('postInstructionsComment: Error while trying to post instructions:', error);
+        }
+        if (callback) {
+            callback(result);
+        }
+    });
+}
+
+/**
+ * Merge a PR
+ * @param {int} prNumber - Number of the PR to merge
+ * @callback {mergeCb} callback
+ */
+function merge(prNumber, callback) {
+    /**
+     * @callback postInstructionsCommentCb
+     * @param {mergeCb} result - Result returned from GitHub
+     */
+    _authenticate();
+    github.pullRequests({
+        user: config.user,
+        repo: config.repo,
+        number: prNumber
+    }, function (error, result) {
+        if (error) {
+            return debug('merge: Error while trying to merge PR:', error);
+        }
+        if (callback) {
+            callback(result);
+        }
     });
 }
 
 module.exports = {
-    getPullRequest: getPullRequests,
+    getPullRequests: getPullRequests,
     checkForLabel: checkForLabel,
     checkForApprovalComments: checkForApprovalComments,
     checkForInstructionsComment: checkForInstructionsComment,
     updateLabels: updateLabels,
-    postInstructionsComment: postInstructionsComment
+    postInstructionsComment: postInstructionsComment,
+    merge: merge
 };
