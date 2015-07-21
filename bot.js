@@ -1,5 +1,5 @@
 var GitHubApi = require('github'),
-    debug = require('debug')('case-study-bot:bot'),
+    debug = require('debug')('peer-review-bot:bot'),
     config = require('./config');
 
 var github = new GitHubApi({version: '3.0.0'});
@@ -11,7 +11,7 @@ function _authenticate() {
     if ((!config.botUser || !config.botPassword) && !config.oauth2token) {
         throw Error('Fatal: No username/password or no Oauth2 token configured!');
     }
-    
+
     if (config.oauth2token) {
         github.authenticate({
             type: 'oauth',
@@ -47,7 +47,7 @@ function getPullRequests(callback) {
         if (!result || !result.length || result.length < 1) {
             return debug('getPullRequests: No open PRs found');
         }
-        
+
         if (callback) {
             callback(result);
         }
@@ -73,8 +73,10 @@ function checkForLabel(prNumber, callback) {
         repo: config.repo,
         number: prNumber
     }, function (error, result) {
-        var labeledNeedsReview = false,
+        var excludeLabels = config.excludeLabels.split(' '),
+            labeledNeedsReview = false,
             labeledReviewed = false,
+            labeledExclude = false,
             labels = [];
 
         if (error) {
@@ -85,15 +87,21 @@ function checkForLabel(prNumber, callback) {
         for (var i = 0; i < result.length; i++) {
             labeledNeedsReview = (result[i].name === config.labelNeedsReview) ? true : labeledNeedsReview;
             labeledReviewed = (result[i].name === config.labelReviewed) ? true : labeledReviewed;
+
+            if (excludeLabels && excludeLabels.length && excludeLabels.length > 0) {
+                labeledExclude = (excludeLabels.indexOf(result[i].name) > -1) ? true : labeledExclude;
+            }
+
             labels.push(result[i]);
         }
-        
+
         if (callback) {
             callback({
                 labeledNeedsReview: labeledNeedsReview,
                 labeledReviewed: labeledReviewed,
+                labeledExclude: labeledExclude,
                 labels: labels
-            })   
+            })
         }
     });
 }
@@ -197,7 +205,7 @@ function updateLabels(prNumber, approved, labels, callback) {
 
     // Adjust labels for approved / not approved
     if (approved && labels.indexOf(config.labelNeedsReview) > -1) {
-        labels.removeAt(labels.indexOf(config.labelNeedsReview));
+        labels.splice(labels.indexOf(config.labelNeedsReview), 1);
         changed = true;
     } else if (approved && labels.indexOf(config.labelReviewed) === -1) {
         labels.push(config.labelReviewed);

@@ -4,6 +4,7 @@ var pe = process.env,
 /**
  * To conigure the bot, either set the values here directly -
  * or set environment variables.
+ * SEE README.MD FOR DETAILS
  */
 config.user = pe.targetUser || 'catalystcode',
 config.repo = pe.taretRepo || 'case-studies',
@@ -16,6 +17,7 @@ config.instructionsComment = pe.instructionsComment || '';
 config.pullRequestsStatus = pe.pullRequestsStatus || 'open';
 config.mergeOnReview = pe.mergeOnReview || false;
 config.oauth2token = pe.oauth2token || '';
+config.excludeLabels = pe.excludeLabels || 'no-review';
 
 // Setup Instructions Comment
 if (config.instructionsComment === '') {

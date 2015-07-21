@@ -1,7 +1,7 @@
 var express = require('express'),
     bot = require('../bot'),
     config = require('../config'),
-    debug = require('debug')('case-study-bot:pullrequest'),
+    debug = require('debug')('peer-review-bot:pullrequest'),
     router = express.Router();
 
 /**
@@ -11,10 +11,11 @@ var express = require('express'),
  */
 function _respond(res, message) {
     if (res && message) {
-        if (message.constructor === Array) {
+        if (message.isArray) {
             return res.json({messages: JSON.stringify(message)});
+        } else {
+            res.json({message: message});
         }
-        res.json({message: message});
     }
 }
 
@@ -24,10 +25,14 @@ router.get('/', function (req, res) {
 
         // Processing function for each pull request
         function processPullRequest(labelResult) {
+            // Check if PR is already labeled as 'reviewed', in which case we stop here
             if (labelResult.labeledReviewed) {
-                // Already labeled as 'reviewed', we're done here
-                debug('PR ' + pr.number + ' already marked as "reviewed", stopping');
-                return _respond(res, 'PR ' + pr.number + ' already marked as "reviewed", stopping');
+                return debug('PR ' + pr.number + ' already marked as "reviewed", stopping');
+            }
+
+            // Check if we're supposed to skip this one
+            if (labelResult.labeledExclude) {
+                return debug('PR ' + pr.number + ' labeled to be exlcuded from the bot, stopping');
             }
 
             // Let's get all our comments and check them for approval
@@ -37,7 +42,6 @@ router.get('/', function (req, res) {
                 // Check for instructions comment and post if not present
                 bot.checkForInstructionsComment(pr.number, function (posted) {
                     if (!posted) {
-                        output.push('No intructions comment found on PR ' + pr.number + '; posting instructions comment');
                         debug('No intructions comment found on PR ' + pr.number + '; posting instructions comment');
                         bot.postInstructionsComment(pr.number);
                     }
@@ -45,9 +49,7 @@ router.get('/', function (req, res) {
 
                 // Stop if we already marked it as 'needs-review' and it does need more reviews
                 if (labelResult.labeledNeedsReview && !approved) {
-                    output.push('PR ' + pr.number + ' already marked as "needs-review", stopping');
-                    debug('PR ' + pr.number + ' already marked as "needs-review", stopping');
-                    return _respond(res, output);
+                    return debug('PR ' + pr.number + ' already marked as "needs-review", stopping');
                 }
 
                 labels = labelResult.labels.map(function (label) {
@@ -63,8 +65,6 @@ router.get('/', function (req, res) {
                     output.push('Merging on review set to true, PR approved, merging');
                     bot.merge(pr.number);
                 }
-
-                _respond(res, output);
             });
         }
 
@@ -73,6 +73,8 @@ router.get('/', function (req, res) {
             pr = pullRequests[i];
             bot.checkForLabel(pr.number, processPullRequest);
         }
+
+        return _respond(res, 'Processing ' + pullRequests.length + ' PRs.');
     });
 });
 
