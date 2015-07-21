@@ -72,10 +72,24 @@ router.post('/', function (req, res) {
     if (!req.body) {
         return debug('POST Request received, but no body!');
     }
-    
+
+    // Check if it's a simple PR action
     if (req.body.pull_request && req.body.pull_request.number) {
-          bot.checkForLabel(req.body.pull_request.number, req.body.pull_request, processPullRequest);
-          return _respond(res, 'Processing PR ' + req.body.pull_request.number);
+        bot.checkForLabel(req.body.pull_request.number, req.body.pull_request, processPullRequest);
+        return _respond(res, 'Processing PR ' + req.body.pull_request.number);
+    }
+
+    // Check if it's an issue action (comment, for instance)
+    if (req.body.issue && req.body.issue.pull_request) {
+        bot.getPullRequest(req.body.issue.number, function (pullRequests) {
+            if (!pullRequests || pullRequests.length < 0) {
+                return debug('Error: Tried to process single pull request, but failed');
+            }
+
+            bot.checkForLabel(pullRequests[0].number, pullRequests[0], processPullRequest);
+        });
+
+        return _respond(res, 'Processing PR ' + req.body.issue.number);
     }
 });
 

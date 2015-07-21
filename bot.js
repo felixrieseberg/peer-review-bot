@@ -27,7 +27,7 @@ function _authenticate() {
 }
 
 /**
- * Fetch all (open) pull requests in the currently configured repo
+ * Fetch all pull requests in the currently configured repo
  * @callback {getPullRequestsCb} callback
  */
 function getPullRequests(callback) {
@@ -50,6 +50,30 @@ function getPullRequests(callback) {
 
         if (callback) {
             callback(result);
+        }
+    });
+}
+
+/**
+ * Fetch a single pull requests in the currently configured repo
+ * @callback {getPullRequestsCb} callback
+ */
+function getPullRequest(prNumber, callback) {
+    /**
+     * @callback getPullRequestsCb
+     * @param {Object[]} result - Returned pull request objects
+     */
+    github.pullRequests.get({
+        user: config.user,
+        repo: config.repo,
+        number: prNumber
+    }, function(error, result) {
+        if (error) {
+            return debug('getPullRequests: Error while fetching PRs: ', error);
+        }
+
+        if (callback) {
+            callback([result]);
         }
     });
 }
@@ -291,6 +315,7 @@ function merge(prNumber, callback) {
 }
 
 module.exports = {
+    getPullRequest: getPullRequest,
     getPullRequests: getPullRequests,
     checkForLabel: checkForLabel,
     checkForApprovalComments: checkForApprovalComments,
