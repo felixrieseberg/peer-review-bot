@@ -57,9 +57,10 @@ function getPullRequests(callback) {
 /**
  * Get all the labels for a PR
  * @param {int} prNumber - Number of PR for which to get all the labels
+ * @param {Object} pr - PR to handle
  * @callback {checkForLabelCb} callback
  */
-function checkForLabel(prNumber, callback) {
+function checkForLabel(prNumber, pr, callback) {
     /**
      * @callback checkForLabelCb
      * @param {Object} result - Object describing how the issue is labeled
@@ -101,7 +102,7 @@ function checkForLabel(prNumber, callback) {
                 labeledReviewed: labeledReviewed,
                 labeledExclude: labeledExclude,
                 labels: labels
-            })
+            }, pr);
         }
     });
 }
