@@ -14,6 +14,7 @@ To configure this little bot, go check out `config.js` and either change the fil
 * `instructionsComment` Comment posted by the bot when a new PR is opened - if you use `{reviewsNeeded}` in your comment, it'll automatically be replaced with the number of reviews needed
 * `mergeOnReview` (default: false) If set to true, the bot will automatically merge a PR as soon as it consideres it revieweed
 * `pullRequestsStatus` (default: open) Status of the pull requests to consider. Options are: all|open|closed
+* `oauth2token` If set, we'll use an OAuth token instead of the username/password combination to authenticate the bot
 
 #### Installation
 A small number of things is needed to get the bot started:

@@ -5,18 +5,17 @@ var pe = process.env,
  * To conigure the bot, either set the values here directly -
  * or set environment variables.
  */
-config.user = pe.targetUser || 'Epic-Stuff-Bot',
-config.repo = pe.taretRepo || 'test-chamber',
+config.user = pe.targetUser || 'catalystcode',
+config.repo = pe.taretRepo || 'case-studies',
 config.botUser = pe.botUser || 'Epic-Stuff-Bot',
 config.botPassword = pe.botPassword || '',
 config.labelReviewed = pe.labelReviewed || 'peer-reviewed',
 config.labelNeedsReview = pe.labelNeedsReview || 'needs-peer-review',
 config.reviewsNeeded = pe.reviewsNeeded || 3;
 config.instructionsComment = pe.instructionsComment || '';
-config.pullRequestsStatus = pe.pullRequestsStatus || 'all';
+config.pullRequestsStatus = pe.pullRequestsStatus || 'open';
 config.mergeOnReview = pe.mergeOnReview || false;
-config.oauth2key = pe.oauth2key || null;
-config.oauth2secret = pe.oauth2secret || null;
+config.oauth2token = pe.oauth2token || '';
 
 // Setup Instructions Comment
 if (config.instructionsComment === '') {

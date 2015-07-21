@@ -8,16 +8,15 @@ var github = new GitHubApi({version: '3.0.0'});
  * Private: Authenticate next request
  */
 function _authenticate() {
-    if ((!config.botUser || !config.botPassword) || (!config.oauth2key || !config.oauth2secret)) {
-        throw Error('Fatal: No username/password or no Oauth2 key/secret configured!');
+    if ((!config.botUser || !config.botPassword) && !config.oauth2token) {
+        throw Error('Fatal: No username/password or no Oauth2 token configured!');
     }
     
-    if (config.oauth2key && config.oauth2secret) {
+    if (config.oauth2token) {
         github.authenticate({
             type: 'oauth',
-            key: config.oauth2key,
-            secret: config.oauth2secret
-        })
+            token: config.oauth2token
+        });
     } else {
         github.authenticate({
             type: 'basic',
@@ -39,7 +38,7 @@ function getPullRequests(callback) {
     github.pullRequests.getAll({
         user: config.user,
         repo: config.repo,
-        state: 'all'
+        state: config.pullRequestStatus
     }, function(error, result) {
         if (error) {
             return debug('getPullRequests: Error while fetching PRs: ', error);
