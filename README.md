@@ -1,5 +1,7 @@
 # Peer Review Bot
-A little bot Node.js checking Microsoft's case studies for peer reviews. It'll watch a repository for pull requests - and label them either as 'needs-peer-review' or as 'peer-reviewed', depending on how many people have commented with a reassuring 'LGTM!'.
+A little Node.js bot checking GitHub Pull Requests for peer reviews, automatically labeling and merging PRs appropriately. We at Microsoft built it to automatically label blog posts pull requests, which have to receive peer reviews before they are merged into the code base. 
+
+The bot responds to GitHub web hooks and labels pull requests either as 'needs-peer-review' or as 'peer-reviewed', depending on how many people have commented with a reassuring 'LGTM!'.
 
 #### Configuration
 To configure this little bot, go check out `config.js` and either change the file or set environment variables. Here are the properties:
@@ -24,3 +26,6 @@ A small number of things is needed to get the bot started:
 * Create the two labels used by the bot using GitHub's label feature (go to your repo's issues and select 'Labels' in the top navigation bar)
 * Give your bot a home in the public Internet
 * Create a web hook for all relevant events pointing to http://{your-bot}/pullrequest
+
+#### License
+MIT - please check LICENSE for details.
