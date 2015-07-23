@@ -153,7 +153,7 @@ function checkForApprovalComments(prNumber, callback) {
      }, function (error, result) {
         var lgtm = /(LGTM)|(Looks good to me!)|w+?/,
             approvedCount = 0,
-            approved;
+            isInstruction, approved;
 
         if (error) {
             return debug('checkForApprovalComments: Error while fetching coments for single PR: ', error);
@@ -161,10 +161,12 @@ function checkForApprovalComments(prNumber, callback) {
 
         for (var i = 0; i < result.length; i++) {
             if (result[i].body && lgtm.test(result[i].body)) {
-                approvedCount = approvedCount + 1;
+                // Test if we're actually just in the instructions comment
+                isInstruction = (result[i].body.slice(1, 30).trim() === config.instructionsComment.slice(1, 30).trim());
+                approvedCount = (isInstruction) ? approvedCount : approvedCount + 1;
             }
         }
-
+        
         approved = (approvedCount >= config.reviewsNeeded);
 
         if (callback) {
