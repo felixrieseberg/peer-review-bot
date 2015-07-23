@@ -7,7 +7,7 @@ var pe = process.env,
  * SEE README.MD FOR DETAILS
  */
 config.user = pe.targetUser || 'catalystcode',
-config.repo = pe.taretRepo || 'case-studies',
+config.repo = pe.targetRepo || 'case-studies',
 config.botUser = pe.botUser || 'Epic-Stuff-Bot',
 config.botPassword = pe.botPassword || '',
 config.labelReviewed = pe.labelReviewed || 'peer-reviewed',

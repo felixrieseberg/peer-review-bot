@@ -1,0 +1,168 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2014-04-01-preview/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "siteName": {
+            "type": "string"
+        },
+        "hostingPlanName": {
+            "type": "string"
+        },
+        "siteLocation": {
+            "type": "string"
+        },
+        "sku": {
+            "type": "string",
+            "allowedValues": [
+                "Free",
+                "Shared",
+                "Basic",
+                "Standard"
+            ],
+            "defaultValue": "Free"
+        },
+        "workerSize": {
+            "type": "string",
+            "allowedValues": [
+                "0",
+                "1",
+                "2"
+            ],
+            "defaultValue": "0"
+        },
+        "Bot: Target GitHub User": {
+            "type": "string",
+            "defaultValue": ""
+        },
+        "Bot: Target GitHub Repo": {
+            "type": "string",
+            "defaultValue": ""
+        },
+        "Bot: GitHub User": {
+            "type": "string",
+            "defaultValue": ""
+        },
+        "Bot: GitHub Password": {
+            "type": "string",
+            "defaultValue": ""
+        },
+        "Bot: OAuth Token": {
+            "type": "string",
+            "defaultValue": ""
+        },
+        "Bot: Label Reviewed": {
+            "type": "string",
+            "defaultValue": "peer-reviewed"
+        },
+        "Bot: Label Needs Review": {
+            "type": "string",
+            "defaultValue": "needs-peer-review"
+        },
+        "Bot: Reviews Needed": {
+            "type": "int",
+            "defaultValue": 3
+        },
+        "Bot: Ignore PR with Label": {
+            "type": "string",
+            "defaultValue": "no-review"
+        },
+        "Bot: Only for PR Status": {
+            "type": "string",
+            "defaultValue": "open"
+        },
+        "Bot: Only for PR with Filenames": {
+            "type": "string",
+            "defaultValue": "[\"\"]"
+        },
+        "repoUrl": {
+            "type": "string"
+        },
+        "branch": {
+            "type": "string"
+        }
+    },
+    "resources": [{
+        "apiVersion": "2014-06-01",
+        "name": "[parameters('hostingPlanName')]",
+        "type": "Microsoft.Web/serverFarms",
+        "location": "[parameters('siteLocation')]",
+        "properties": {
+            "name": "[parameters('hostingPlanName')]",
+            "sku": "[parameters('sku')]",
+            "workerSize": "[parameters('workerSize')]",
+            "numberOfWorkers": 1
+        }
+    }, {
+        "apiVersion": "2014-06-01",
+        "name": "[parameters('siteName')]",
+        "type": "Microsoft.Web/Sites",
+        "location": "[parameters('siteLocation')]",
+        "dependsOn": [
+            "[concat('Microsoft.Web/serverFarms/', parameters('hostingPlanName'))]"
+        ],
+        "tags": {
+            "[concat('hidden-related:', resourceGroup().id, '/providers/Microsoft.Web/serverfarms/', parameters('hostingPlanName'))]": "empty"
+        },
+        "properties": {
+            "name": "[parameters('siteName')]",
+            "serverFarm": "[parameters('hostingPlanName')]"
+        },
+        "resources": [{
+            "apiVersion": "2014-04-01",
+            "type": "config",
+            "name": "web",
+            "dependsOn": [
+                "[concat('Microsoft.Web/Sites/', parameters('siteName'))]"
+            ],
+            "properties": {
+                "appSettings": [{
+                    "name": "targetUser",
+                    "value": "[parameters('Bot: Target GitHub User')]"
+                }, {
+                    "name": "targetRepo",
+                    "value": "[parameters('Bot: Target GitHub Repo')]"
+                }, {
+                    "name": "botUser",
+                    "value": "[parameters('Bot: GitHub User')]"
+                }, {
+                    "name": "botPassword",
+                    "value": "[parameters('Bot: GitHub Password')]"
+                }, {
+                    "name": "labelReviewed",
+                    "value": "[parameters('Bot: Label Reviewed')]"
+                }, {
+                    "name": "labelNeedsReview",
+                    "value": "[parameters('Bot: Label Needs Review')]"
+                }, {
+                    "name": "reviewsNeeded",
+                    "value": "[parameters('Bot: Reviews Needed')]"
+                }, {
+                    "name": "pullRequestStatus",
+                    "value": "[parameters('Bot: Only for PR Status')]"
+                }, {
+                    "name": "oauth2token",
+                    "value": "[parameters('Bot: OAuth Token')]"
+                }, {
+                    "name": "excludeLabels",
+                    "value": "[parameters('Bot: Ignore PR with Label')]"
+                }, {
+                    "name": "filenameFilter",
+                    "value": "[parameters('Bot: Only for PR with Filenames')]"
+                }]
+            }
+        }, {
+            "apiVersion": "2014-04-01",
+            "name": "web",
+            "type": "sourcecontrols",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/Sites', parameters('siteName'))]",
+                "[concat('Microsoft.Web/Sites/', parameters('siteName'), '/config/web')]"
+            ],
+            "properties": {
+                "RepoUrl": "[parameters('repoUrl')]",
+                "branch": "[parameters('branch')]",
+                "IsManualIntegration": true
+            }
+        }]
+    }]
+}

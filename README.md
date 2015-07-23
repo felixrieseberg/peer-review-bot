@@ -28,5 +28,9 @@ A small number of things is needed to get the bot started:
 * Give your bot a home in the public Internet
 * Create a web hook for all relevant events pointing to http://{your-bot}/pullrequest
 
+Then, simply copy the files to your server and start the both with `npm start`. If you're on Azure, it's even easier - just hit this button:
+
+[![Deploy to Azure](http://azuredeploy.net/deploybutton.png)](https://azuredeploy.net/)
+
 #### License
 MIT - please check LICENSE for details.
