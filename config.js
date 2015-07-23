@@ -18,6 +18,7 @@ config.pullRequestsStatus = pe.pullRequestsStatus || 'open';
 config.mergeOnReview = pe.mergeOnReview || false;
 config.oauth2token = pe.oauth2token || '';
 config.excludeLabels = pe.excludeLabels || 'no-review';
+config.filenameFilter = pe.filenameFilter || '["23534563463"]';
 
 // Setup Instructions Comment
 if (config.instructionsComment === '') {

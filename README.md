@@ -18,6 +18,7 @@ To configure this little bot, go check out `config.js` and either change the fil
 * `pullRequestsStatus` (default: open) Status of the pull requests to consider. Options are: all|open|closed
 * `oauth2token` If set, we'll use an OAuth token instead of the username/password combination to authenticate the bot
 * `excludeLabels` If set, the bot will automatically ignore PRs with those labels (format: `no-review i-hate-reviews`)
+* `filenameFilter` If set, the bot will only act on PRs that impact files with filenames matching this filter, tested using `indexOf` (format: `["_posts", ".md"]`)
 
 #### Installation
 A small number of things is needed to get the bot started:

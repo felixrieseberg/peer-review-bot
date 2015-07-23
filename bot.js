@@ -208,6 +208,48 @@ function checkForInstructionsComment(prNumber, callback) {
 }
 
 /**
+ * Checks if the files changed in a PR are the ones we're scanning for
+ * @param {int} prNumber - Number of PR
+ * @callback {checkForFilesCb} callback
+ */
+function checkForFiles(prNumber, callback) {
+    /**
+     * @callback checkForFilesCb
+     * @param {boolean} matched - Does this pr contain files that match the filename filter?
+     */
+    var filenameFilter = (config.filenameFilter) ? JSON.parse(config.filenameFilter) : [];
+
+    // Bail out if filter not set, return 'true'
+    if (!filenameFilter || filenameFilter.length < 1) {
+        return callback(true);
+    }
+
+    github.pullRequests.getFiles({
+        user: config.user,
+        repo: config.repo,
+        number: prNumber
+    }, function (error, result) {
+        var match = false,
+            i, ii;
+
+        if (error) {
+            return debug('commentInstructions: error while trying fetch comments: ', error);
+        }
+
+        for (i = 0; i < result.length; i = i + 1) {
+            for (var ii = 0; ii < filenameFilter.length; ii = ii + 1) {
+                match = (result[i].filename.indexOf(filenameFilter[ii]) > -1) ? true : match;
+                if (match) {
+                    return callback(true);
+                }
+            }
+        }
+        
+        return callback(match);
+    });
+}
+
+/**
  * Label PR as approved / not approved yet
  * @param {int} prNumber - Number of PR
  * @param {boolean} approved - 'True' for 'peer-reviewed'
@@ -320,6 +362,7 @@ module.exports = {
     checkForLabel: checkForLabel,
     checkForApprovalComments: checkForApprovalComments,
     checkForInstructionsComment: checkForInstructionsComment,
+    checkForFiles: checkForFiles,
     updateLabels: updateLabels,
     postInstructionsComment: postInstructionsComment,
     merge: merge

@@ -35,39 +35,49 @@ function processPullRequest(labelResult, pr) {
         return debug('PR ' + pr.number + ' labeled to be exlcuded from the bot, stopping');
     }
 
-    // Let's get all our comments and check them for approval
-    bot.checkForApprovalComments(pr.number, function (approved) {
-        var labels, output = [];
+    // Check for filenameFilter
+    bot.checkForFiles(pr.number, function (isFilenameMatched) {
+        if (!isFilenameMatched) {
+            return debug('PR ' + pr.number + ' does not match filenameFilter, stopping');
+        }
 
-        // Check for instructions comment and post if not present
-        bot.checkForInstructionsComment(pr.number, function (posted) {
-            if (!posted) {
-                debug('No intructions comment found on PR ' + pr.number + '; posting instructions comment');
-                bot.postInstructionsComment(pr.number);
+        // Let's get all our comments and check them for approval
+        bot.checkForApprovalComments(pr.number, function (approved) {
+            var labels, output = [];
+
+            // Check for instructions comment and post if not present
+            bot.checkForInstructionsComment(pr.number, function (posted) {
+                if (!posted) {
+                    debug('No intructions comment found on PR ' + pr.number + '; posting instructions comment');
+                    bot.postInstructionsComment(pr.number);
+                }
+            });
+
+            // Stop if we already marked it as 'needs-review' and it does need more reviews
+            if (labelResult.labeledNeedsReview && !approved) {
+                return debug('PR ' + pr.number + ' already marked as "needs-review", stopping');
+            }
+
+            labels = labelResult.labels.map(function (label) {
+                return label.name;
+            });
+
+            // Update the labels
+            output.push('Updating labels for PR ' + pr.number);
+            bot.updateLabels(pr.number, approved, labels);
+
+            // If we're supposed to merge, merge
+            if (approved && config.mergeOnReview) {
+                output.push('Merging on review set to true, PR approved, merging');
+                bot.merge(pr.number);
             }
         });
-
-        // Stop if we already marked it as 'needs-review' and it does need more reviews
-        if (labelResult.labeledNeedsReview && !approved) {
-            return debug('PR ' + pr.number + ' already marked as "needs-review", stopping');
-        }
-
-        labels = labelResult.labels.map(function (label) {
-            return label.name;
-        });
-
-        // Update the labels
-        output.push('Updating labels for PR ' + pr.number);
-        bot.updateLabels(pr.number, approved, labels);
-
-        // If we're supposed to merge, merge
-        if (approved && config.mergeOnReview) {
-            output.push('Merging on review set to true, PR approved, merging');
-            bot.merge(pr.number);
-        }
     });
 }
 
+/**
+ * POST /pullrequest: Process incoming GitHub payload
+ */
 router.post('/', function (req, res) {
     if (!req.body) {
         return debug('POST Request received, but no body!');
@@ -93,6 +103,9 @@ router.post('/', function (req, res) {
     }
 });
 
+/**
+ * GET /pullrequest: Process all pull requests
+ */
 router.get('/', function (req, res) {
     bot.getPullRequests(function (pullRequests) {
         var pr, i;
@@ -105,6 +118,21 @@ router.get('/', function (req, res) {
 
         return _respond(res, 'Processing ' + pullRequests.length + ' PRs.');
     });
+});
+
+/**
+ * GET /pullrequest/:id: Process Single Pull Request
+ */
+router.get('/:id', function (req, res) {
+    bot.getPullRequest(req.params.id, function (pullRequests) {
+        if (pullRequests && pullRequests.length > 0) {
+            bot.checkForLabel(req.params.id, pullRequests[0], processPullRequest);
+        } else {
+            return debug('PR ' + req.params.id + ' not found');
+        }
+    });
+
+    return _respond(res, 'Processing PR #' + req.params.id);
 });
 
 module.exports = router;
