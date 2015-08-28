@@ -151,7 +151,7 @@ function checkForApprovalComments(prNumber, callback) {
          number: prNumber,
          perPage: 99
      }, function (error, result) {
-        var lgtm = /(LGTM)|(Looks good to me!)|w+?/,
+        var lgtm = /(LGTM)|(Looks good to me!)/,
             approvedCount = 0,
             isInstruction, approved;
 
