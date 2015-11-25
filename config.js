@@ -2,7 +2,7 @@ var pe = process.env,
     config = {};
 
 /**
- * To conigure the bot, either set the values here directly -
+ * To configure the bot, either set the values here directly -
  * or set environment variables.
  * SEE README.MD FOR DETAILS
  */
