@@ -1,7 +1,7 @@
 var express = require('express'),
-    bot = require('../bot'),
+    bot = require('../src/bot'),
     config = require('../config'),
-    debug = require('debug')('peer-review-bot:pullrequest'),
+    debug = require('debug')('reviewbot:pullrequest'),
     router = express.Router();
 
 /**
@@ -124,6 +124,8 @@ router.get('/', function (req, res) {
  * GET /pullrequest/:id: Process Single Pull Request
  */
 router.get('/:id', function (req, res) {
+    debug('Received request to process PR #' + req.params.id);
+
     bot.getPullRequest(req.params.id, function (pullRequests) {
         if (pullRequests && pullRequests.length > 0) {
             bot.checkForLabel(req.params.id, pullRequests[0], processPullRequest);

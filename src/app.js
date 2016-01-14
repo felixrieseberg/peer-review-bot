@@ -2,8 +2,9 @@ var express = require('express'),
     path = require('path'),
     logger = require('morgan'),
     bodyParser = require('body-parser'),
-    routes = require('./routes/index'),
-    pullrequest = require('./routes/pullrequest'),
+    routes = require('../routes/index'),
+    pullrequest = require('../routes/pullrequest'),
+    comment = require('../routes/comment'),
     app = express();
 
 // view engine setup
@@ -17,6 +18,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', routes);
 app.use('/pullrequest', pullrequest);
+app.use('/comment', comment);
 
 // Catch 404 and forward to error handler
 app.use(function (req, res, next) {

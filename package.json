@@ -6,7 +6,8 @@
       "url": "https://github.com/felixrieseberg/peer-review-bot"
   },
   "scripts": {
-    "start": "node ./bin/www"
+    "start": "node ./bin/www",
+    "test": "grunt test"
   },
   "dependencies": {
     "body-parser": "~1.13.2",

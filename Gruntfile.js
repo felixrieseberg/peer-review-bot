@@ -22,7 +22,5 @@ module.exports = function (grunt) {
         }
     });
 
-    grunt.registerTask('codestyle', ['jshint', 'jscs']);
-    grunt.registerTask('test', ['codestyle']);
-    grunt.registerTask('default', ['test']);
+    grunt.registerTask('test', ['jshint', 'jscs']);
 };

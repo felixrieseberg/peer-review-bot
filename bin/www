@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-var app = require('../app'),
-    debug = require('debug')('peer-review-bot:server'),
+var app = require('../src/app'),
+    debug = require('debug')('reviewbot:server'),
     http = require('http'),
     port, server;
 

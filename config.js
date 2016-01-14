@@ -7,7 +7,7 @@ var pe = process.env,
  * SEE README.MD FOR DETAILS
  */
 config.user = pe.targetUser || 'catalystcode',
-config.repo = pe.targetRepo || 'case-studies',
+config.repo = pe.targetRepo || 'real-life-code',
 config.botUser = pe.botUser || 'Epic-Stuff-Bot',
 config.botPassword = pe.botPassword || '',
 config.labelReviewed = pe.labelReviewed || 'peer-reviewed',
@@ -18,13 +18,14 @@ config.pullRequestsStatus = pe.pullRequestsStatus || 'open';
 config.mergeOnReview = pe.mergeOnReview || false;
 config.oauth2token = pe.oauth2token || '';
 config.excludeLabels = pe.excludeLabels || 'no-review';
-config.filenameFilter = pe.filenameFilter || '["23534563463"]';
+config.filenameFilter = pe.filenameFilter || '["_posts"]';
 
 // Setup Instructions Comment
 if (config.instructionsComment === '') {
-    var comment = 'Hi! I\'m your friendly/stabby Case Study Bot. For this case study to be labeled as "peer-reviewed", ';
-    comment += 'you\'ll need as least ' + config.reviewsNeeded + ' comments containing the magic phrase "LGTM" ';
-    comment += '("Looks good to me" also works, for those of us that are really verbose).';
+    var comment = 'Hi! I\'m your friendly/stabby Case Study Bot. For this case study to be labeled as "peer-reviewed", ' +
+                  'you\'ll need as least ' + config.reviewsNeeded + ' comments containing the magic phrase "LGTM" ' +
+                  '("Looks good to me" also works, for those of us that are really verbose).';
+                  
     config.instructionsComment = comment;
 }
 

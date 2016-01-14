@@ -1,6 +1,6 @@
 var GitHubApi = require('github'),
-    debug = require('debug')('peer-review-bot:bot'),
-    config = require('./config');
+    debug = require('debug')('reviewbot:bot'),
+    config = require('../config');
 
 var github = new GitHubApi({version: '3.0.0'});
 
@@ -31,6 +31,7 @@ function _authenticate() {
  * @callback {getPullRequestsCb} callback
  */
 function getPullRequests(callback) {
+    _authenticate();
     /**
      * @callback getPullRequestsCb
      * @param {Object[]} result - Returned pull request objects
@@ -39,7 +40,7 @@ function getPullRequests(callback) {
         user: config.user,
         repo: config.repo,
         state: config.pullRequestStatus
-    }, function(error, result) {
+    }, function (error, result) {
         if (error) {
             return debug('getPullRequests: Error while fetching PRs: ', error);
         }
@@ -59,18 +60,23 @@ function getPullRequests(callback) {
  * @callback {getPullRequestsCb} callback
  */
 function getPullRequest(prNumber, callback) {
+    _authenticate();
     /**
      * @callback getPullRequestsCb
      * @param {Object[]} result - Returned pull request objects
      */
+    debug('GitHub: Attempting to get PR #' + prNumber);    
+    
     github.pullRequests.get({
         user: config.user,
         repo: config.repo,
         number: prNumber
-    }, function(error, result) {
+    }, function (error, result) {
         if (error) {
-            return debug('getPullRequests: Error while fetching PRs: ', error);
+            return debug('getPullRequests: Error while fetching PRs: ' + error);
         }
+        
+        debug('GitHub: PR successfully recieved. Changed files: ' + result.changed_files);
 
         if (callback) {
             callback([result]);
@@ -85,6 +91,7 @@ function getPullRequest(prNumber, callback) {
  * @callback {checkForLabelCb} callback
  */
 function checkForLabel(prNumber, pr, callback) {
+    _authenticate();
     /**
      * @callback checkForLabelCb
      * @param {Object} result - Object describing how the issue is labeled
@@ -137,6 +144,7 @@ function checkForLabel(prNumber, pr, callback) {
  * @callback {checkForApprovalComments} callback
  */
 function checkForApprovalComments(prNumber, callback) {
+    _authenticate();
     /**
      * @callback checkForApprovalCommentsCb
      * @param {boolean} approved - Approved or not?
@@ -181,6 +189,7 @@ function checkForApprovalComments(prNumber, callback) {
  * @callback {checkForInstructionsCommentCb} callback
  */
 function checkForInstructionsComment(prNumber, callback) {
+    _authenticate();
     /**
      * @callback checkForInstructionsCommentCb
      * @param {boolean} posted - Comment posted or not?
@@ -225,6 +234,8 @@ function checkForFiles(prNumber, callback) {
     if (!filenameFilter || filenameFilter.length < 1) {
         return callback(true);
     }
+    
+    _authenticate();
 
     github.pullRequests.getFiles({
         user: config.user,
@@ -317,15 +328,29 @@ function postInstructionsComment(prNumber, callback) {
      * @callback postInstructionsCommentCb
      * @param {Object} result - Result returned from GitHub
      */
+    postComment(prNumber, config.instructionsComment, callback);
+}
+
+/**
+ * Post a comment to an issue
+ * @param {int} number - Number of the PR/issue to post to
+ * @param {string} comment - Comment to post
+ * @callback {postCommentCb} callback
+ */
+function postComment(number, comment, callback) {
+    /**
+     * @callback postCommentCb
+     * @param {Object} result - Result returned from GitHub
+     */
     _authenticate();
     github.issues.createComment({
         user: config.user,
         repo: config.repo,
-        number: prNumber,
-        body: config.instructionsComment
+        number: number,
+        body: comment
     }, function (error, result) {
         if (error) {
-            return debug('postInstructionsComment: Error while trying to post instructions:', error);
+            return debug('postComment: Error while trying to post instructions:', error);
         }
         if (callback) {
             callback(result);
@@ -367,5 +392,6 @@ module.exports = {
     checkForFiles: checkForFiles,
     updateLabels: updateLabels,
     postInstructionsComment: postInstructionsComment,
+    postComment: postComment,
     merge: merge
 };
