@@ -369,7 +369,7 @@ function merge(prNumber, callback) {
      * @param {mergeCb} result - Result returned from GitHub
      */
     _authenticate();
-    github.pullRequests({
+    github.pullRequests.merge({
         user: config.user,
         repo: config.repo,
         number: prNumber
