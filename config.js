@@ -23,7 +23,7 @@ config.filenameFilter = pe.filenameFilter || '["_posts"]';
 // Setup Instructions Comment
 if (config.instructionsComment === '') {
     var comment = 'Hi! I\'m your friendly/stabby Case Study Bot. For this case study to be labeled as "peer-reviewed", ' +
-                  'you\'ll need as least ' + config.reviewsNeeded + ' comments containing the magic phrase "LGTM" ' +
+                  'you\'ll need at least ' + config.reviewsNeeded + ' comments containing the magic phrase "LGTM" ' +
                   '("Looks good to me" also works, for those of us that are really verbose).';
                   
     config.instructionsComment = comment;
