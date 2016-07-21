@@ -2,7 +2,12 @@ var GitHubApi = require('github'),
     debug = require('debug')('reviewbot:bot'),
     config = require('../config');
 
-var github = new GitHubApi({version: '3.0.0'});
+var options = {version: '3.0.0'}
+if (config.github) {
+    options.host = config.github;
+    options.pathPrefix = "/api/v3";
+}
+var github = new GitHubApi(options);
 
 /**
  * Private: Authenticate next request
@@ -65,8 +70,8 @@ function getPullRequest(prNumber, callback) {
      * @callback getPullRequestsCb
      * @param {Object[]} result - Returned pull request objects
      */
-    debug('GitHub: Attempting to get PR #' + prNumber);    
-    
+    debug('GitHub: Attempting to get PR #' + prNumber);
+
     github.pullRequests.get({
         user: config.user,
         repo: config.repo,
@@ -75,7 +80,7 @@ function getPullRequest(prNumber, callback) {
         if (error) {
             return debug('getPullRequests: Error while fetching PRs: ' + error);
         }
-        
+
         debug('GitHub: PR successfully recieved. Changed files: ' + result.changed_files);
 
         if (callback) {
@@ -174,7 +179,7 @@ function checkForApprovalComments(prNumber, callback) {
                 approvedCount = (isInstruction) ? approvedCount : approvedCount + 1;
             }
         }
-        
+
         approved = (approvedCount >= config.reviewsNeeded);
 
         if (callback) {
@@ -234,7 +239,7 @@ function checkForFiles(prNumber, callback) {
     if (!filenameFilter || filenameFilter.length < 1) {
         return callback(true);
     }
-    
+
     _authenticate();
 
     github.pullRequests.getFiles({
@@ -257,7 +262,7 @@ function checkForFiles(prNumber, callback) {
                 }
             }
         }
-        
+
         return callback(match);
     });
 }

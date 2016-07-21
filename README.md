@@ -6,6 +6,7 @@ The bot responds to GitHub web hooks and labels pull requests either as 'needs-p
 #### Configuration
 To configure this little bot, go check out `config.js` and either change the file or set environment variables. Here are the properties:
 
+* `github` (default: empty)The github hostname, if you are using the Enterprise Github
 * `user` User/organization owning the repository
 * `repo` Repository to watch (case-studies)
 * `botUser` Bot's GitHub username
