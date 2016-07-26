@@ -1,6 +1,6 @@
 {
   "name": "peer-review-bot",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "author": "Felix Rieseberg <felix@felixrieseberg.com>",
   "repository": {
     "url": "https://github.com/felixrieseberg/peer-review-bot"
