@@ -25,11 +25,6 @@ function _respond(res, message) {
  * @param {Object} pr - PR currently handled
  */
 function processPullRequest(labelResult, pr) {
-    // Check if PR is already labeled as 'reviewed', in which case we stop here
-    if (labelResult.labeledReviewed) {
-        return debug('PR ' + pr.number + ' already marked as "reviewed", stopping');
-    }
-
     // Check if we're supposed to skip this one
     if (labelResult.labeledExclude) {
         return debug('PR ' + pr.number + ' labeled to be exlcuded from the bot, stopping');
@@ -66,11 +61,13 @@ function processPullRequest(labelResult, pr) {
             output.push('Updating labels for PR ' + pr.number);
             bot.updateLabels(pr.number, approved, labels);
 
-            // If we're supposed to merge, merge
-            if (approved && config.mergeOnReview) {
-                output.push('Merging on review set to true, PR approved, merging');
-                bot.merge(pr.number);
-            }
+            bot.checkForStatus(pr.head.sha, function(success) {
+                // If we're supposed to merge, merge
+                if (success && approved && config.mergeOnReview && !pr.merged && pr.mergeable) {
+                    output.push('Merging on review set to true, PR approved, merging');
+                    bot.merge(pr.number);
+                }
+            })
         });
     });
 }

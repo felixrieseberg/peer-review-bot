@@ -311,15 +311,17 @@ function updateLabels(prNumber, approved, labels, callback) {
     if (approved && labels.indexOf(config.labelNeedsReview) > -1) {
         labels.splice(labels.indexOf(config.labelNeedsReview), 1);
         changed = true;
-    } else if (approved && labels.indexOf(config.labelReviewed) === -1) {
+    }
+    if (approved && labels.indexOf(config.labelReviewed) === -1) {
         labels.push(config.labelReviewed);
         changed = true;
     }
 
     if (!approved && labels.indexOf(config.labelReviewed) > -1) {
-        labels.removeAt(labels.indexOf(config.labelReviewed));
+        labels.splice(labels.indexOf(config.labelReviewed), 1);
         changed = true;
-    } else if (!approved && labels.indexOf(config.labelNeedsReview) === -1) {
+    }
+    if (!approved && labels.indexOf(config.labelNeedsReview) === -1) {
         labels.push(config.labelNeedsReview);
         changed = true;
     }
