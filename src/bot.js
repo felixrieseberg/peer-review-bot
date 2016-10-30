@@ -268,6 +268,25 @@ function checkForFiles(prNumber, callback) {
 }
 
 /**
+ * Check the commit status is in success state
+ * @param {string} sha - the commit sha1
+ * @callback {checkForStatusCb} callback
+ */
+function checkForStatus(sha, callback) {
+    _authenticate()
+    github.repos.getCombinedStatus({
+        user: config.user,
+        repo: config.repo,
+        sha: sha
+    }, function(error, result) {
+        if (error) {
+            return debug('checkForStatus: error while trying get combined status: ', error)
+        }
+        return callback(result.state == 'success')
+    })
+}
+
+/**
  * Label PR as approved / not approved yet
  * @param {int} prNumber - Number of PR
  * @param {boolean} approved - 'True' for 'peer-reviewed'
@@ -292,15 +311,17 @@ function updateLabels(prNumber, approved, labels, callback) {
     if (approved && labels.indexOf(config.labelNeedsReview) > -1) {
         labels.splice(labels.indexOf(config.labelNeedsReview), 1);
         changed = true;
-    } else if (approved && labels.indexOf(config.labelReviewed) === -1) {
+    }
+    if (approved && labels.indexOf(config.labelReviewed) === -1) {
         labels.push(config.labelReviewed);
         changed = true;
     }
 
     if (!approved && labels.indexOf(config.labelReviewed) > -1) {
-        labels.removeAt(labels.indexOf(config.labelReviewed));
+        labels.splice(labels.indexOf(config.labelReviewed), 1);
         changed = true;
-    } else if (!approved && labels.indexOf(config.labelNeedsReview) === -1) {
+    }
+    if (!approved && labels.indexOf(config.labelNeedsReview) === -1) {
         labels.push(config.labelNeedsReview);
         changed = true;
     }
@@ -396,6 +417,7 @@ module.exports = {
     checkForInstructionsComment: checkForInstructionsComment,
     checkForFiles: checkForFiles,
     updateLabels: updateLabels,
+    checkForStatus: checkForStatus,
     postInstructionsComment: postInstructionsComment,
     postComment: postComment,
     merge: merge
