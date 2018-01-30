@@ -158,19 +158,10 @@ function checkForApprovalComments(prNumber, callback) {
          return debug('checkForApprovalComments: insufficient parameters');
      }
 
-     github.issues.getComments({
-         repo: config.repo,
-         user: config.user,
-         number: prNumber,
-         perPage: 99
-     }, function (error, result) {
+     getComments(prNumber, 1, function (result) {
         var lgtm = /(LGTM)|(Looks good to me!)/,
             approvedCount = 0,
             isInstruction, approved;
-
-        if (error) {
-            return debug('checkForApprovalComments: Error while fetching coments for single PR: ', error);
-        }
 
         for (var i = 0; i < result.length; i++) {
             if (result[i].body && lgtm.test(result[i].body)) {
@@ -186,6 +177,43 @@ function checkForApprovalComments(prNumber, callback) {
             callback(approved);
         }
      });
+}
+
+/**
+ * get all the comments for the pull request.
+ * @param {int} prNumber 
+ * @param {int} page
+ * @param {getCommentsCb} callback 
+ */
+function getComments(prNumber, page, callback) {
+    _authenticate();
+    /**
+     * @callback checkForApprovalCommentsCb
+     * @param {boolean} approved - Approved or not?
+     */
+    if (!prNumber) {
+        return debug('getComments: insufficient parameters');
+    }
+
+    github.issues.getComments({
+        repo: config.repo,
+        user: config.user,
+        number: prNumber,
+        page: page
+    }, function (error, result) {
+        if (error) {
+            return debug('getComments: Error while fetching coments for single PR: ', error, page);
+        }
+        // this means that it possibly has a next page
+        if (result.length == 30) {
+            // recursively fetch the next page
+            getComments(prNumber, page + 1, function(next) {
+                callback(result.concat(next));
+            })
+        } else {
+            callback(result);
+        }
+    })
 }
 
 /**
